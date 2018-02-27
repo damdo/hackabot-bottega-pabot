@@ -14,27 +14,30 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 
+# Imports 
 from telegram import ReplyKeyboardMarkup
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
-                          ConversationHandler)
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler, ConversationHandler)
 import os
 import logging
 
-
+# Get token bot from the corresponding environment variable
 BOT_TOKEN = os.environ.get("BOT_TOKEN", None)
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# define the behaviors
 CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
 
-reply_keyboard = [['Age', 'Favourite colour'],
+# define the reply buttoned keyboard
+# a row is a list of columns, rows are separated by a comma and contained in a list
+reply_things_keyboard = [['Age', 'Favourite colour'],
                   ['Number of siblings', 'Something else...'],
-                  ['Done']]
-markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+                  ['Done']
+                ]
+
+markup_things = ReplyKeyboardMarkup(reply_things_keyboard, one_time_keyboard=True)
 
 
 def facts_to_str(user_data):
@@ -47,27 +50,23 @@ def facts_to_str(user_data):
 
 
 def start(bot, update):
-    update.message.reply_text(
-            "Hi! My name is PAbot :) I will hold a more complex conversation with you. "
-        "Why don't you tell me something about yourself?",
-        reply_markup=markup)
-
+    # pass the bot and the update
+    # update.message.reply_text
+    update.message.reply_text("Ciao dasdasdas ziii", reply_markup=markup_things)
+    # update.message.reply_text( """Ciao sono PAbot, il bot della Provincia di Trento! Come posso esserti utile?""", reply_markup=markup_things)
     return CHOOSING
 
 
 def regular_choice(bot, update, user_data):
     text = update.message.text
     user_data['choice'] = text
-    update.message.reply_text(
-        'Your {}? Yes, I would love to hear about that!'.format(text.lower()))
+    update.message.reply_text( 'Your {}? Yes, I would love to hear about that!'.format(text.lower()))
 
     return TYPING_REPLY
 
 
 def custom_choice(bot, update):
-    update.message.reply_text('Alright, please send me the category first, '
-                              'for example "Most impressive skill"')
-
+    update.message.reply_text('Alright, please send me the category first, ' 'for example "Most impressive skill"')
     return TYPING_CHOICE
 
 
@@ -77,11 +76,8 @@ def received_information(bot, update, user_data):
     user_data[category] = text
     del user_data['choice']
 
-    update.message.reply_text("Neat! Just so you know, this is what you already told me:"
-                              "{}"
-                              "You can tell me more, or change your opinion on something.".format(
-                                  facts_to_str(user_data)), reply_markup=markup)
-
+    update.message.reply_text("Neat! Just so you know, this is what you already told me:" "{}" "You can tell me more, or change your opinion on something."
+        .format( facts_to_str(user_data)), reply_markup=markup_things) 
     return CHOOSING
 
 
@@ -89,10 +85,7 @@ def done(bot, update, user_data):
     if 'choice' in user_data:
         del user_data['choice']
 
-    update.message.reply_text("I learned these facts about you:"
-                              "{}"
-                              "Until next time!".format(facts_to_str(user_data)))
-
+    update.message.reply_text("I learned these facts about you:" "{}" "Until next time!".format(facts_to_str(user_data)))
     user_data.clear()
     return ConversationHandler.END
 
@@ -112,26 +105,11 @@ def main():
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
-
         states={
-            CHOOSING: [RegexHandler('^(Age|Favourite colour|Number of siblings)$',
-                                    regular_choice,
-                                    pass_user_data=True),
-                       RegexHandler('^Something else...$',
-                                    custom_choice),
-                       ],
-
-            TYPING_CHOICE: [MessageHandler(Filters.text,
-                                           regular_choice,
-                                           pass_user_data=True),
-                            ],
-
-            TYPING_REPLY: [MessageHandler(Filters.text,
-                                          received_information,
-                                          pass_user_data=True),
-                           ],
+            CHOOSING: [RegexHandler('^(Age|Favourite colour|Number of siblings)$', regular_choice, pass_user_data=True), RegexHandler('^Something else...$', custom_choice), ],
+            TYPING_CHOICE: [MessageHandler(Filters.text, regular_choice, pass_user_data=True), ],
+            TYPING_REPLY: [MessageHandler(Filters.text, received_information, pass_user_data=True), ],
         },
-
         fallbacks=[RegexHandler('^Done$', done, pass_user_data=True)]
     )
 
@@ -152,4 +130,5 @@ if __name__ == '__main__':
     if(BOT_TOKEN):
         main()
     else:
-        print("No Telegram Bot Token provided, quitting")
+        print "No Telegram Bot Token provided, quitting"
+
