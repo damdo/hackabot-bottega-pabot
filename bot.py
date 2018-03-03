@@ -27,7 +27,7 @@ CHOOSING, TYPING_REPLY, TYPING_CHOICE, WANT_FEEDBACK, SPECIFIED_FEEDBACK, RECOVE
 choice_buttons = [
         ['DOMANDA LIBERA'],
         ['SFOGLIA PER CATEGORIE'],
-        ['Fine']
+        ['FINE']
 ]
 
 feedback_buttons = [
@@ -70,9 +70,15 @@ def facts_to_str(user_data):
 def start(bot, update, user_data):
     last_command = "start"
     send_to_analytics(bot, update, user_data, last_command)
-    update.message.reply_text("Ciao "+update.message.from_user.first_name+" sono PAbot, il bot della Provincia di Trento! Sono qui per aiutarti e guidarti nelle procedure della pubblica amministrazione, sono esperto in: \n - PROCEDIMENTI \n - MODULI DI DOMANDA \n - CERTIFICAZIONI \n \n Puoi chiedermi quello che ti serve in due modi: \n - Clicca DOMANDA LIBERA per cercare tra le procedure \n oppure \n - Clicca SFOGLIA PER CATEGORIE e cerca quello che ti serve", reply_markup=choice_keyboard)
+    proc_e = '\U0001F4DD'
+    dom_e = '\U00002753'
+    cert_e = '\U0001F5DE'
+    update.message.reply_text("Ciao "+update.message.from_user.first_name+" sono PAbot, il bot della Provincia di Trento! Sono qui per aiutarti e guidarti nelle procedure della pubblica amministrazione, sono esperto in: \n"+proc_e.decode('unicode-escape')+" PROCEDIMENTI \n "+dom_e.decode('unicode-escape')+" MODULI DI DOMANDA \n "+cert_e.decode('unicode-escape')+" CERTIFICAZIONI \n \n Puoi chiedermi quello che ti serve in due modi: \n - Clicca DOMANDA LIBERA per cercare tra le procedure \n oppure \n - Clicca SFOGLIA PER CATEGORIE e cerca quello che ti serve", reply_markup=choice_keyboard)
     return CHOOSING
 
+def back_home(bot, update, user_data):
+    update.message.reply_text("Puoi chiedermi quello che ti serve in due modi: \n - Clicca DOMANDA LIBERA per cercare tra le procedure \n oppure \n - Clicca SFOGLIA PER CATEGORIE e cerca quello che ti serve", reply_markup=choice_keyboard)
+    return CHOOSING
 
 def regular_choice(bot, update, user_data):
     text = update.message.text
@@ -92,7 +98,7 @@ def want_feedback_process(bot, update, user_data):
         update.message.reply_text('Grazie per aver utilizzato il bot, A presto!\nClicca qui: /start per ricominciare a parlare con me :)')
         return ConversationHandler.END
 
-def custom_choice(bot, update):
+def custom_choice(bot, update, user_data):
     cat_buttons = []
     r = requests.post(NLP_BACKEND_ENDPOINT+"cat")
     headers = {'Content-type': 'application/json'}
@@ -115,12 +121,14 @@ def received_information(bot, update, user_data):
     print response_procedures
 
     if response_procedures["processes"]["ERROR"] == True:
-        update.message.reply_text("Mi dispiace, non sono riuscito a trovare una risposta alla tua domanda :( prova a chiedemi qualcosa di diverso o altrimenti prova a SFOGLIARE PER CATEGORIE", reply_markup=choice_keyboard)
+        update.message.reply_text("Mi dispiace :( non sono riuscito a trovare una risposta, fai click su DOMANDA LIBERA e chiedimi qualcosa o prova a SFOGLIARE PER CATEGORIE", reply_markup=choice_keyboard)
     else:
         procedures_buttons = []
         for key,value in response_procedures["processes"].iteritems():
             if "ERROR" not in key:
                 procedures_buttons.append([value["title"]])
+        # processes_buttons.append(["INDIETRO"])
+        procedures_buttons.append(["INDIETRO"])
         procedures_keyboard = ReplyKeyboardMarkup(procedures_buttons, one_time_keyboard=True)
 
         update.message.reply_text("Bene, questi sono i risultati più pertinenti che ho trovato per la tua domanda:\n", reply_markup=procedures_keyboard)
@@ -134,7 +142,7 @@ def done(bot, update, user_data):
 
 
 def exit_process(bot, update, user_data):
-    update.message.reply_text('Grazie per aver utilizzato il bot, A presto!')
+    update.message.reply_text('Grazie per aver utilizzato il bot, A presto!\nClicca qui: /start per ricominciare a parlare con me :)')
     return ConversationHandler.END
 
 def cat_handler(bot, update, user_data):
@@ -150,7 +158,7 @@ def cat_handler(bot, update, user_data):
         processes_list_for_single_cat = cat_response["processes"][text]
         for proc in processes_list_for_single_cat:
             processes_buttons.append([proc["NOME"]])
-
+        processes_buttons.append(["INDIETRO"])
         processes_keyboard = ReplyKeyboardMarkup(processes_buttons, one_time_keyboard=True)
         update.message.reply_text('Bene, questi sono i risultati più pertinenti che ho trovato per la tua domanda:\n', reply_markup=processes_keyboard)
 
@@ -166,12 +174,12 @@ def rendering_process_cat_handler(bot, update, user_data):
     r = requests.post(NLP_BACKEND_ENDPOINT+"cat")
     headers = {'Content-type': 'application/json'}
     cat_response = r.json()
-    extracted_process = {"NOME": "Mi dispiace","URL DEL SITO": "", "DESCRIZIONE": "Processo non trovato, riprova."}
+    extracted_process = {"NOME": "Mi dispiace :( non sono riuscito a trovare alcuna risposta","URL DEL SITO": "", "DESCRIZIONE": ", fai click su DOMANDA LIBERA e chiedimi qualcosa o prova a SFOGLIARE PER CATEGORIE"}
     for process in cat_response["processes"][user_data["current_cat"]]:
         if process["NOME"] == input_proccess_name:
             extracted_process = process
 
-    update.message.reply_text(extracted_process["NOME"]+"\n "+extracted_process["DESCRIZIONE"]+"\n"+extracted_process["URL DEL SITO"]+"\n",reply_markup=choice_keyboard)
+    update.message.reply_text(extracted_process["NOME"]+"\n\n"+extracted_process["DESCRIZIONE"]+"\nUlteriori informazioni: "+extracted_process["URL DEL SITO"]+"\n",reply_markup=choice_keyboard)
     return CHOOSING
 
 def rendering_process_req_handler(bot, update, user_data):
@@ -180,12 +188,12 @@ def rendering_process_req_handler(bot, update, user_data):
     r = requests.post(NLP_BACKEND_ENDPOINT+"req",json={"input_string": user_free_text_request})
     headers = {'Content-type': 'application/json'}
     req_response = r.json()
-    extracted_process = {"title": "Mi dispiace", "description": "Processo non trovato, riprova.", "url": ""}
+    extracted_process = {"title": "Mi dispiace :( non sono riuscito a trovare alcuna risposta","url": "", "description": ", fai click su DOMANDA LIBERA e chiedimi qualcosa o prova a SFOGLIARE PER CATEGORIE"}
     for k,v in req_response["processes"].iteritems():
         if "ERROR" not in k:
             extracted_process = v
 
-    update.message.reply_text(extracted_process["title"]+"\n "+extracted_process["description"]+"\n"+extracted_process["url"]+"\n",reply_markup=choice_keyboard)
+    update.message.reply_text(extracted_process["title"]+"\n\n"+extracted_process["description"]+"\nUlteriori informazioni: "+extracted_process["url"]+"\n",reply_markup=choice_keyboard)
     return CHOOSING
 
 def error(bot, update, error):
@@ -210,29 +218,31 @@ def main():
 
             CHOOSING: [
                 RegexHandler('^(DOMANDA LIBERA)$', regular_choice, pass_user_data=True),
-                RegexHandler('^SFOGLIA PER CATEGORIE$', custom_choice),
-                RegexHandler('^Fine$', done, pass_user_data=True), MessageHandler(Filters.text, not_understood, pass_user_data=True),
+                RegexHandler('^SFOGLIA PER CATEGORIE$', custom_choice, pass_user_data=True),
+                RegexHandler('^INDIETRO$', back_home, pass_user_data=True),
+                RegexHandler('^FINE$', done, pass_user_data=True), MessageHandler(Filters.text, not_understood, pass_user_data=True),
             ],
 
             WANT_FEEDBACK: [
                 RegexHandler('^(Si|No)$', want_feedback_process, pass_user_data=True),
-                RegexHandler('^Fine$', done, pass_user_data=True), MessageHandler(Filters.text, not_understood, pass_user_data=True),
+                RegexHandler('^FINE$', done, pass_user_data=True), MessageHandler(Filters.text, not_understood, pass_user_data=True),
             ],
 
             SPECIFIED_FEEDBACK: [
-                RegexHandler('^Fine$', done, pass_user_data=True),
+                RegexHandler('^FINE$', done, pass_user_data=True),
                 MessageHandler(Filters.text, exit_process , pass_user_data=True),
             ],
 
             TYPING_CHOICE: [
-                RegexHandler('^Fine$', done, pass_user_data=True),
+                RegexHandler('^FINE$', done, pass_user_data=True),
                 MessageHandler(Filters.text, cat_handler, pass_user_data=True),
             ],
 
             RECOVER: [
                 RegexHandler('^(DOMANDA LIBERA)$', regular_choice, pass_user_data=True),
-                RegexHandler('^SFOGLIA PER CATEGORIE$', custom_choice),
-                RegexHandler('^Fine$', done, pass_user_data=True), MessageHandler(Filters.text, not_understood, pass_user_data=True),
+                RegexHandler('^INDIETRO$', back_home, pass_user_data=True),
+                RegexHandler('^SFOGLIA PER CATEGORIE$', custom_choice, pass_user_data=True),
+                RegexHandler('^FINE$', done, pass_user_data=True), MessageHandler(Filters.text, not_understood, pass_user_data=True),
             ],
 
             TYPING_REPLY: [
@@ -240,15 +250,17 @@ def main():
             ],
 
             RENDERING_PROCESS_CAT: [
+                RegexHandler('^INDIETRO$', back_home, pass_user_data=True),
                 MessageHandler(Filters.text, rendering_process_cat_handler, pass_user_data=True),
             ],
             RENDERING_PROCESS_REQ: [
+                RegexHandler('^INDIETRO$', back_home, pass_user_data=True),
                 MessageHandler(Filters.text, rendering_process_req_handler, pass_user_data=True),
             ],
         },
 
         fallbacks=[
-            RegexHandler('^Fine$', done, pass_user_data=True),
+            RegexHandler('^FINE$', done, pass_user_data=True),
             MessageHandler(Filters.text, not_understood, pass_user_data=True),
         ]
     )
