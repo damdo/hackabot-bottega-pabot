@@ -1,43 +1,58 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-This Bot uses the Updater class to handle the bot.
 
-First, a few callback functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-
-Usage:
-Example of a bot-user conversation using ConversationHandler.
-Send /start to initiate the conversation.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
-
-# Imports 
-from telegram import ReplyKeyboardMarkup
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler, ConversationHandler)
+from telegram import ReplyKeyboardMarkup, File
+from telegram.ext import (Updater,Handler, CommandHandler, MessageHandler, Filters, RegexHandler, ConversationHandler)
 import os
 import logging
+import requests
+import json
 
 # Get token bot from the corresponding environment variable
 BOT_TOKEN = os.environ.get("BOT_TOKEN", None)
+ANALYTICS_ENDPOINT = "http://tgbot-dash:8888/api"
+ANALYTICS_ENDPOINT = "http://tgbot-dash:8888/api"
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# define the behaviors
-CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
+# define the states to fall into
+CHOOSING, TYPING_REPLY, TYPING_CHOICE, WANT_FEEDBACK, FEEDBACK, SPECIFIED_FEEDBACK = range(6)
 
 # define the reply buttoned keyboard
 # a row is a list of columns, rows are separated by a comma and contained in a list
-reply_things_keyboard = [['Age', 'Favourite colour'],
-                  ['Number of siblings', 'Something else...'],
-                  ['Done']
-                ]
+choice_buttons = [
+        ['DOMANDA LIBERA'],
+        ['SFOGLIA PER CATEGORIE'],
+        ['Done']
+]
 
-markup_things = ReplyKeyboardMarkup(reply_things_keyboard, one_time_keyboard=True)
+feedback_buttons = [
+        ['⭐'],
+        ['⭐⭐']
+]
+
+want_feedback_buttons = [
+    ["No"],
+    ["Yes"]
+]
+
+feedback_keyboard = ReplyKeyboardMarkup(feedback_buttons, one_time_keyboard=True)
+choice_keyboard = ReplyKeyboardMarkup(choice_buttons, one_time_keyboard=True)
+want_feedback_keyboard = ReplyKeyboardMarkup(want_feedback_buttons, one_time_keyboard=True)
+
+
+def send_to_analytics(bot, update, user_data, last_command):
+    prof_pic_file_id = bot.get_user_profile_photos(update.message.from_user.id).photos[0][0].file_id
+    profile_pic = bot.get_file(prof_pic_file_id)
+    #profilePic.download(str(update.message.from_user.id)+".jpg")
+    userinfo = {
+        "user":str(update.message.from_user.first_name)+" "+str(update.message.from_user.last_name),
+        "profile_pic" : str(profile_pic.file_path),
+        "nickname":str(update.message.from_user.username)
+     }
+    requests.post(ANALYTICS_ENDPOINT, data=json.dumps(userinfo))
 
 
 def facts_to_str(user_data):
@@ -49,10 +64,12 @@ def facts_to_str(user_data):
     return "\n".join(facts).join(['\n', '\n'])
 
 
-def start(bot, update):
+def start(bot, update, user_data):
+    last_command = "start"
+    send_to_analytics(bot, update, user_data, last_command)
     # pass the bot and the update
     # update.message.reply_text
-    update.message.reply_text("Ciao dasdasdas ziii", reply_markup=markup_things)
+    update.message.reply_text("Ciao "+update.message.from_user.first_name+" sono PAbot, il bot della Provincia di Trento! Sono qui per aiutarti e guidarti nelle procedure della pubblica amministrazione, sono esperto in: \n - PROCEDIMENTI \n - MODULI DI DOMANDA \n - CERTIFICAZIONI \n \n Puoi chiedermi quello che ti serve in due modi: \n - Clicca DOMANDA LIBERA per cercare tra le procedure \n oppure \n - Clicca SFOGLIA PER CATEGORIE e cerca quello che ti serve", reply_markup=choice_keyboard)
     # update.message.reply_text( """Ciao sono PAbot, il bot della Provincia di Trento! Come posso esserti utile?""", reply_markup=markup_things)
     return CHOOSING
 
@@ -60,33 +77,45 @@ def start(bot, update):
 def regular_choice(bot, update, user_data):
     text = update.message.text
     user_data['choice'] = text
-    update.message.reply_text( 'Your {}? Yes, I would love to hear about that!'.format(text.lower()))
+    update.message.reply_text( 'Bene :) Hai scelto DOMANDA LIBERA, scrivimi pure qui sotto quello che stai cercando, faro\' del mio meglio per aiutarti!'.format(text.lower()))
 
     return TYPING_REPLY
 
+def want_feedback_process(bot, update, user_data):
+    print "want_feedback_process"
+    text = update.message.text
+    print text
+    if text == "Yes" :
+        print "setting FEEDBACK"
+        update.message.reply_text("Indica un punteggio per il bot da 1 a 5 star :)", reply_markup=feedback_keyboard)
+        return SPECIFIED_FEEDBACK
+    else:
+        update.message.reply_text('Grazie per aver utilizzato il bot, A presto!')
+        return ConversationHandler.END
+
+        return ConversationHandler.END
 
 def custom_choice(bot, update):
-    update.message.reply_text('Alright, please send me the category first, ' 'for example "Most impressive skill"')
+    update.message.reply_text('Bene :) Hai scelto SFOGLIA PER CATEGORIE, guarda i pulsanti delle categorie qui sotto e scegli quella piu\' pertinente alle tue necessita\'')
     return TYPING_CHOICE
 
 
 def received_information(bot, update, user_data):
-    text = update.message.text
-    category = user_data['choice']
-    user_data[category] = text
-    del user_data['choice']
-
-    update.message.reply_text("Neat! Just so you know, this is what you already told me:" "{}" "You can tell me more, or change your opinion on something."
-        .format( facts_to_str(user_data)), reply_markup=markup_things) 
+    update.message.reply_text("TODO: (Questa sara\' la risposta alla domanda dell\'utente)", reply_markup=choice_keyboard)
     return CHOOSING
 
 
 def done(bot, update, user_data):
-    if 'choice' in user_data:
-        del user_data['choice']
+    update.message.reply_text("Ottimo, spero tu abbia trovato la risposta che stavi cercando. Desideri lasciarci un feedback?", reply_markup=want_feedback_keyboard)
+    return WANT_FEEDBACK
 
-    update.message.reply_text("I learned these facts about you:" "{}" "Until next time!".format(facts_to_str(user_data)))
-    user_data.clear()
+#def feedback(bot,update,user_data):
+#    print "feedback fun"
+#    update.message.reply_text("Indica un punteggio per il bot da 1 a 5 star :)", reply_markup=feedback_keyboard)
+#    return SPECIFIED_FEEDBACK
+
+def exit_process(bot, update, user_data):
+    update.message.reply_text('Grazie per aver utilizzato il bot, A presto!')
     return ConversationHandler.END
 
 
@@ -104,9 +133,12 @@ def main():
 
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
+        entry_points=[CommandHandler('start', start, pass_user_data=True)],
         states={
-            CHOOSING: [RegexHandler('^(Age|Favourite colour|Number of siblings)$', regular_choice, pass_user_data=True), RegexHandler('^Something else...$', custom_choice), ],
+            CHOOSING: [RegexHandler('^(DOMANDA LIBERA|ALTRO)$', regular_choice, pass_user_data=True), RegexHandler('^SFOGLIA PER CATEGORIE$', custom_choice), ],
+            WANT_FEEDBACK: [RegexHandler('^(Yes|No)$', want_feedback_process, pass_user_data=True)],
+            SPECIFIED_FEEDBACK: [MessageHandler(Filters.text, exit_process , pass_user_data=True)],
+            #FEEDBACK: [RegexHandler('No',feedback, pass_user_data=True), RegexHandler('Yes',feedback, pass_user_data=True)],
             TYPING_CHOICE: [MessageHandler(Filters.text, regular_choice, pass_user_data=True), ],
             TYPING_REPLY: [MessageHandler(Filters.text, received_information, pass_user_data=True), ],
         },
