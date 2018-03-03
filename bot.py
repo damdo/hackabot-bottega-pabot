@@ -31,8 +31,9 @@ choice_buttons = [
 ]
 
 feedback_buttons = [
-        ['⭐'],
-        ['⭐⭐']
+        ['⭐', '⭐⭐'],
+        ['⭐⭐⭐', '⭐⭐⭐⭐'],
+        ['⭐⭐⭐⭐⭐'],
 ]
 
 want_feedback_buttons = [
