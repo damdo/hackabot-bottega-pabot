@@ -20,7 +20,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 # define the states to fall into
-CHOOSING, TYPING_REPLY, TYPING_CHOICE, WANT_FEEDBACK, SPECIFIED_FEEDBACK, RECOVER, RENDERING_PROCESS = range(7)
+CHOOSING, TYPING_REPLY, TYPING_CHOICE, WANT_FEEDBACK, SPECIFIED_FEEDBACK, RECOVER, RENDERING_PROCESS_CAT, RENDERING_PROCESS_REQ = range(8)
 
 # define the reply buttoned keyboard
 # a row is a list of columns, rows are separated by a comma and contained in a list
@@ -88,7 +88,7 @@ def want_feedback_process(bot, update, user_data):
         update.message.reply_text("Indica un punteggio per il bot da 1 a 5 star :)", reply_markup=feedback_keyboard)
         return SPECIFIED_FEEDBACK
     else:
-        update.message.reply_text('Grazie per aver utilizzato il bot, A presto!')
+        update.message.reply_text('Grazie per aver utilizzato il bot, A presto!\nClicca qui: /start per ricominciare a parlare con me :)')
         return ConversationHandler.END
 
 def custom_choice(bot, update):
@@ -105,6 +105,7 @@ def custom_choice(bot, update):
 
 def received_information(bot, update, user_data):
     user_free_text_request = update.message.text
+    user_data["input_sequence"] = user_free_text_request
 
     r = requests.post(NLP_BACKEND_ENDPOINT+"req",json={"input_string": user_free_text_request})
     headers = {'Content-type': 'application/json'}
@@ -123,7 +124,7 @@ def received_information(bot, update, user_data):
 
         update.message.reply_text("Bene, questi sono i risultati più pertinenti che ho trovato per la tua domanda:\n", reply_markup=procedures_keyboard)
 
-    return CHOOSING
+    return RENDERING_PROCESS_REQ
 
 
 def done(bot, update, user_data):
@@ -144,30 +145,46 @@ def cat_handler(bot, update, user_data):
     r = requests.post(NLP_BACKEND_ENDPOINT+"cat")
     headers = {'Content-type': 'application/json'}
     cat_response = r.json()
+    if text in cat_response["processes"]:
+        processes_list_for_single_cat = cat_response["processes"][text]
+        for proc in processes_list_for_single_cat:
+            processes_buttons.append([proc["NOME"]])
 
-    processes_list_for_single_cat = cat_response["processes"][text]
-    for proc in processes_list_for_single_cat:
-        processes_buttons.append([proc["NOME"]])
+        processes_keyboard = ReplyKeyboardMarkup(processes_buttons, one_time_keyboard=True)
+        update.message.reply_text('Bene, questi sono i risultati più pertinenti che ho trovato per la tua domanda:\n', reply_markup=processes_keyboard)
 
-    print processes_buttons
-
-    processes_keyboard = ReplyKeyboardMarkup(processes_buttons, one_time_keyboard=True)
-    update.message.reply_text('Bene, questi sono i risultati più pertinenti che ho trovato per la tua domanda:\n', reply_markup=processes_keyboard)
-    return RENDERING_PROCESS
+        return RENDERING_PROCESS_CAT
+    else:
+        update.message.reply_text('Categoria non presente, prova a scegliere una delle categorie qui sotto.')
+        return TYPING_CHOICE
 
 
-def rendering_process_handler(bot, update, user_data):
+def rendering_process_cat_handler(bot, update, user_data):
     input_proccess_name = update.message.text
 
     r = requests.post(NLP_BACKEND_ENDPOINT+"cat")
     headers = {'Content-type': 'application/json'}
     cat_response = r.json()
-    extracted_process = {"NOME": "Mi dispiace", "DESCRIZIONE": "Processo non trovato, riprova."}
+    extracted_process = {"NOME": "Mi dispiace","URL DEL SITO": "", "DESCRIZIONE": "Processo non trovato, riprova."}
     for process in cat_response["processes"][user_data["current_cat"]]:
         if process["NOME"] == input_proccess_name:
             extracted_process = process
 
-    update.message.reply_text(process["NOME"]+"\n "+process["DESCRIZIONE"]+"\n"+process["URL DEL SITO"]+"\n",reply_markup=choice_keyboard)
+    update.message.reply_text(extracted_process["NOME"]+"\n "+extracted_process["DESCRIZIONE"]+"\n"+extracted_process["URL DEL SITO"]+"\n",reply_markup=choice_keyboard)
+    return CHOOSING
+
+def rendering_process_req_handler(bot, update, user_data):
+    input_proccess_name = update.message.text
+    user_free_text_request = user_data["input_sequence"]
+    r = requests.post(NLP_BACKEND_ENDPOINT+"req",json={"input_string": user_free_text_request})
+    headers = {'Content-type': 'application/json'}
+    req_response = r.json()
+    extracted_process = {"title": "Mi dispiace", "description": "Processo non trovato, riprova.", "url": ""}
+    for k,v in req_response["processes"].iteritems():
+        if "ERROR" not in k:
+            extracted_process = v
+
+    update.message.reply_text(extracted_process["title"]+"\n "+extracted_process["description"]+"\n"+extracted_process["url"]+"\n",reply_markup=choice_keyboard)
     return CHOOSING
 
 def error(bot, update, error):
@@ -175,7 +192,7 @@ def error(bot, update, error):
     logger.warning('Update "%s" caused error "%s"', update, error)
 
 def not_understood(bot, update, user_data):
-    update.message.reply_text('Scusa, non ho capito cosa intendi, prova a chiedermi qualcosa oppure, clicca uno dei pulsanti qui sotto', reply_markup=choice_keyboard)
+    update.message.reply_text('Scusa, non ho capito cosa intendi, clicca uno dei pulsanti qui sotto per scegliere cosa fare :)', reply_markup=choice_keyboard)
     return RECOVER
 
 def main():
@@ -221,8 +238,11 @@ def main():
                 MessageHandler(Filters.text, received_information, pass_user_data=True),
             ],
 
-            RENDERING_PROCESS: [
-                MessageHandler(Filters.text, rendering_process_handler, pass_user_data=True),
+            RENDERING_PROCESS_CAT: [
+                MessageHandler(Filters.text, rendering_process_cat_handler, pass_user_data=True),
+            ],
+            RENDERING_PROCESS_REQ: [
+                MessageHandler(Filters.text, rendering_process_req_handler, pass_user_data=True),
             ],
         },
 
