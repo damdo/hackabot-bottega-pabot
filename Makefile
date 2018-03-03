@@ -1,7 +1,7 @@
 build:
 	docker build -t damdo/tgbot-hackabot .
 run:
-	docker run --rm -it -e BOT_TOKEN=539020128:AAGdBDE0b3BYa51R-qem7Xxlr1wT0Af8io8 --link tgbot-dash:tgbot-dash --link tgbot-nlp-backend:tgbot-nlp-backend --name tgbot-hackabot damdo/tgbot-hackabot
+	docker run --rm -it -e BOT_TOKEN=fake --link tgbot-dash:tgbot-dash --link tgbot-nlp-backend:tgbot-nlp-backend --name tgbot-hackabot damdo/tgbot-hackabot
 
 dev:
 	docker build -f $(PWD)/Dockerfile.dev -t damdo/tgbot-hackabot-dev .
