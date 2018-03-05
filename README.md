@@ -24,7 +24,7 @@ docker build -t hackabot-bottega-pabot .
 docker run --rm -it -e BOT_TOKEN=<your-telegram-bot-api-key> --link hackabot-bottega-backend-service:hackabot-bottega-backend-service --name hackabot-bottega-pabot hackabot-bottega-pabot
 ```
 
-This project uses third party libraries that are distributed under their own terms (See 3RD-PARTY.md)
+This project uses third party libraries that are distributed under their own terms (See 3RD-PARTY file)
 It internally uses:
 - the python-telegram-bot library: https://github.com/python-telegram-bot/python-telegram-bot
 - the requests library: https://github.com/requests/requests
