@@ -3,6 +3,10 @@
 :robot: **Telegram Bot winner** of the **Open Data Hackabot 2018** (hackathon)
 developed for the *Provincia Autonoma di Trento (PaT)* by me and my team, the BOTtega. https://www.odhb2018.net/
 
+<br>
+
+<img src="assets/hackabot-bottega-pabot-src.jpg">
+
 
 ### PRE-REQUISITES:
 - docker-ce up and running
@@ -24,3 +28,12 @@ This project uses third party libraries that are distributed under their own ter
 It internally uses:
 - the python-telegram-bot library: https://github.com/python-telegram-bot/python-telegram-bot
 - the requests library: https://github.com/requests/requests
+
+### CREDITS:
+BOTtega team:
+- Damiano Donati https://github.com/damdo
+- Nicola Garau https://github.com/a7ocin
+- Ivan Kayongo
+- Andrea Zanella
+
+Thanks also to Nicola Cracchi Bianchi, Piergiorgio Cipriano and Giulia Degli Esposti from Dedagroup and to the guys at Provincia Autonoma di Trento, Open Data Trentino and Informatica Trentina.
