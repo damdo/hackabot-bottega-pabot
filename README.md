@@ -5,7 +5,7 @@ developed for the *Provincia Autonoma di Trento (PaT)* by me and my team, the BO
 
 <br>
 
-<img src="assets/hackabot-bottega-pabot-src.jpg" height="70%" width="70%">
+<img src="assets/hackabot-bottega-pabot-src.jpg" height="700px" >
 
 
 ### PRE-REQUISITES:
