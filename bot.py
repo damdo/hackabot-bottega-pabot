@@ -9,7 +9,7 @@ import requests
 import json
 
 # Get token bot from the corresponding environment variable
-BOT_TOKEN = os.environ.get("BOT_TOKEN", None)
+BOT_TOKEN = os.environ.get("BOT_TOKEN", False)
 NLP_BACKEND_ENDPOINT = "http://tgbot-nlp-backend:5000/"
 ANALYTICS_ENDPOINT = "http://tgbot-dash:8888/api"
 
