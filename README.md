@@ -36,4 +36,4 @@ BOTtega team:
 - Ivan Kayongo
 - Andrea Zanella
 
-Thanks also to Nicola Cracchi Bianchi, Piergiorgio Cipriano and Giulia Degli Esposti from Dedagroup and to the guys at Provincia Autonoma di Trento, Open Data Trentino and Informatica Trentina.
+Thanks also to Nicola Cracchi Bianchi, Piergiorgio Cipriano and Giulia Degli Esposti from Dedagroup, Carlo Caprini for the precious help and to the guys at Provincia Autonoma di Trento, Open Data Trentino and Informatica Trentina.
