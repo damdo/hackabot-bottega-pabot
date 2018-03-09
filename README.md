@@ -33,7 +33,7 @@ It internally uses:
 BOTtega team:
 - Damiano Donati https://github.com/damdo
 - Nicola Garau https://github.com/a7ocin
-- Ivan Kayongo
+- Ivan Kayongo https://github.com/benhurIvo
 - Andrea Zanella
 
 Thanks also to Nicola Cracchi Bianchi, Piergiorgio Cipriano and Giulia Degli Esposti from Dedagroup, Carlo Caprini for the precious help and to the guys at Provincia Autonoma di Trento, Open Data Trentino and Informatica Trentina.
