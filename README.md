@@ -4,8 +4,7 @@
 developed for the *Provincia Autonoma di Trento (PaT)* by me and my team, the BOTtega. https://www.odhb2018.net/
 
 <br>
-
-<img src="assets/hackabot-bottega-pabot-src.jpg" height="700px" >
+<img src="assets/pabot_poster.png" >
 
 
 ### PRE-REQUISITES:
@@ -36,4 +35,4 @@ BOTtega team:
 - Ivan Kayongo https://github.com/benhurIvo
 - Andrea Zanella
 
-Thanks also to Nicola Cracchi Bianchi, Piergiorgio Cipriano and Giulia Degli Esposti from Dedagroup, Carlo Caprini for the precious help and to the guys at Provincia Autonoma di Trento, Open Data Trentino and Informatica Trentina.
+Thanks also to Nicola Cracchi Bianchi, Piergiorgio Cipriano and Giulia Degli Esposti from [Dedagroup](https://www.dedagroup.it), Carlo Caprini from [U-Hopper](https://u-hopper.com) for the precious help and to the girls/guys at [Provincia Autonoma di Trento](http://www.provincia.tn.it), [Open Data Trentino](https://dati.trentino.it) and [Informatica Trentina](https://www.infotn.it).
